@@ -1,7 +1,7 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { AppContext } from '../contexts/AppContext';
-import { AppView, Reservation } from '../types';
+import { AppView } from '../types';
 
 interface DashboardProps {
     setView: (view: AppView) => void;
@@ -16,6 +16,79 @@ const InfoCard: React.FC<{ title: string; value: string | number; icon: React.Re
         </div>
     </div>
 );
+
+const MonthlyIncomeCard: React.FC<{ 
+    reservations: any[], 
+    expenses: any[], 
+    formatCurrency: (amount: number) => string,
+    iconClass: string 
+}> = ({ reservations, expenses, formatCurrency, iconClass }) => {
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    
+    const monthlyIncome = reservations
+        .filter(r => {
+            const reservationDate = new Date(r.checkIn);
+            return reservationDate.getMonth() === selectedMonth && reservationDate.getFullYear() === selectedYear;
+        })
+        .reduce((acc, r) => acc + (r.totalPaid - r.commission - r.taxes), 0);
+        
+    const monthlyExpenses = expenses
+        .filter(e => {
+            const expenseDate = new Date(e.date);
+            return expenseDate.getMonth() === selectedMonth && expenseDate.getFullYear() === selectedYear;
+        })
+        .reduce((acc, e) => acc + e.amount, 0);
+
+    const months = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    const years = Array.from(new Set([
+        ...reservations.map(r => new Date(r.checkIn).getFullYear()),
+        ...expenses.map(e => new Date(e.date).getFullYear()),
+        new Date().getFullYear()
+    ])).sort((a, b) => b - a);
+
+    return (
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-emerald-500">
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center">
+                    <div className="mr-4 text-gray-500 dark:text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Ganancia Neta (Mes)</p>
+                        <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{formatCurrency(monthlyIncome - monthlyExpenses)}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="flex space-x-2">
+                <select 
+                    value={selectedMonth} 
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                    {months.map((month, index) => (
+                        <option key={index} value={index}>{month}</option>
+                    ))}
+                </select>
+                <select 
+                    value={selectedYear} 
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                    {years.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+    );
+};
 
 const NavCard: React.FC<{ title: string; description: string; view: AppView; setView: (view: AppView) => void; icon: React.ReactNode }> = ({ title, description, view, setView, icon }) => (
     <div
@@ -37,13 +110,13 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
 
     const upcomingReservations = reservations.filter(r => new Date(r.checkIn) >= new Date()).length;
     
-    const monthlyIncome = reservations
-        .filter(r => new Date(r.checkIn).getMonth() === new Date().getMonth())
-        .reduce((acc, r) => acc + (r.totalPaid - r.commission - r.taxes), 0);
-        
     const monthlyExpenses = expenses
         .filter(e => new Date(e.date).getMonth() === new Date().getMonth())
         .reduce((acc, e) => acc + e.amount, 0);
+
+    // Calcular totales
+    const totalIncome = reservations.reduce((acc, r) => acc + (r.totalPaid - r.commission - r.taxes), 0);
+    const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
 
     const formatCurrency = (amount: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount);
 
@@ -55,10 +128,17 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <h2 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">Bienvenido de Nuevo!</h2>
             <p className="text-lg text-gray-500 dark:text-gray-400 mb-8">Aquí tienes un resumen rápido del estado de tu cabaña.</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <InfoCard title="Próximas Reservas" value={upcomingReservations} color="border-blue-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
-                <InfoCard title="Ganancia Neta (Mes)" value={formatCurrency(monthlyIncome - monthlyExpenses)} color="border-green-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v.01" /></svg>} />
-                <InfoCard title="Gastos (Mes)" value={formatCurrency(monthlyExpenses)} color="border-red-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>} />
+                <MonthlyIncomeCard 
+                    reservations={reservations} 
+                    expenses={expenses} 
+                    formatCurrency={formatCurrency}
+                    iconClass={iconClass}
+                />
+                <InfoCard title="Gastos (Mes)" value={formatCurrency(monthlyExpenses)} color="border-red-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>} />
+                <InfoCard title="Ganancia Total" value={formatCurrency(totalIncome)} color="border-green-600" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8a3 3 0 11-6 0c0-.176.016-.35.045-.522M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
+                <InfoCard title="Gastos Totales" value={formatCurrency(totalExpenses)} color="border-orange-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} />
             </div>
 
             <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Accesos Rápidos</h3>
