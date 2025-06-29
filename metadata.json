@@ -1,6 +1,6 @@
 {
-  "name": "Gestor de Cabaña",
-  "description": "Una aplicación para gestionar las reservas, finanzas, mantenimiento y servicios de una cabaña de alquiler. Se conecta con calendarios, registra ingresos y gastos, y organiza fotos y servicios adicionales.",
+  "name": "Santa Teresa - Suesca Cundinamarca",
+  "description": "Una aplicación para gestionar las reservas, finanzas, mantenimiento y servicios de la cabaña Santa Teresa en Suesca, Cundinamarca. Se conecta con calendarios, registra ingresos y gastos, y organiza fotos y servicios adicionales.",
   "requestFramePermissions": [],
   "prompt": ""
 }

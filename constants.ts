@@ -63,13 +63,13 @@ export const DUMMY_PHOTOS: Photo[] = [
         id: 'photo1',
         url: 'https://picsum.photos/seed/cabin1/800/600',
         uploadDate: '2023-05-10',
-        description: 'Vista exterior de la cabaña (Antes de la remodelación)'
+        description: 'Vista exterior de Santa Teresa (Antes de la remodelación)'
     },
     {
         id: 'photo2',
         url: 'https://picsum.photos/seed/cabin2/800/600',
         uploadDate: '2024-03-20',
-        description: 'Vista exterior de la cabaña (Después de pintar)'
+        description: 'Vista exterior de Santa Teresa (Después de pintar)'
     },
     {
         id: 'photo3',

@@ -44,7 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
         <aside className="w-64 bg-white dark:bg-gray-800 shadow-lg flex-shrink-0">
             <div className="p-4">
                 <h1 className="text-2xl font-bold text-emerald-700 dark:text-emerald-500 text-center">
-                    Cabaña Gestor
+                    Santa Teresa
                 </h1>
             </div>
             <nav className="mt-4 px-2">

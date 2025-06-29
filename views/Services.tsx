@@ -1,13 +1,10 @@
-
 import React, { useState, useContext, useRef } from 'react';
 import { AppContext } from '../contexts/AppContext';
 import { Service, AppContextType } from '../types';
 import Header from '../components/Header';
 import Modal from '../components/Modal';
-
-// This needs to be declared because the script is loaded globally in index.html
-declare const jspdf: any;
-declare const html2canvas: any;
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const ServiceForm: React.FC<{
     onSave: (formData: FormData) => void;
@@ -114,7 +111,7 @@ const ServicesPDFMenu: React.FC<{ services: Service[]; apiUrl: string }> = ({ se
         <div className="p-10 bg-white" style={{ width: '210mm', minHeight: '297mm'}}>
             <div className="text-center mb-10 border-b-2 pb-4 border-gray-800">
                 <h1 className="text-4xl font-serif text-gray-800">Carta de Servicios</h1>
-                <p className="text-lg text-gray-600 mt-2">Cabaña "El Refugio"</p>
+                <p className="text-lg text-gray-600 mt-2">Cabaña "Santa Teresa - Suesca Cundinamarca"</p>
             </div>
             <div className="space-y-8">
                 {services.map(service => (
@@ -173,35 +170,162 @@ const Services: React.FC = () => {
         }
     };
     
+    // Función alternativa para generar PDF sin html2canvas
+    const generatePdfAlternative = async () => {
+        setIsGeneratingPdf(true);
+        
+        try {
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            let yPosition = 20;
+            
+            // Título
+            pdf.setFontSize(20);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Carta de Servicios', pageWidth / 2, yPosition, { align: 'center' });
+            yPosition += 20;
+            
+            // Agregar cada servicio como texto
+            services.forEach((service, index) => {
+                if (yPosition > 250) { // Nueva página si es necesario
+                    pdf.addPage();
+                    yPosition = 20;
+                }
+                
+                pdf.setFontSize(16);
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(service.name, 20, yPosition);
+                yPosition += 10;
+                
+                pdf.setFontSize(12);
+                pdf.setFont('helvetica', 'normal');
+                
+                // Descripción con salto de línea automático
+                const splitDescription = pdf.splitTextToSize(service.description, pageWidth - 40);
+                pdf.text(splitDescription, 20, yPosition);
+                yPosition += splitDescription.length * 5 + 5;
+                
+                // Precio
+                pdf.setFont('helvetica', 'bold');
+                pdf.text(`Precio: $${new Intl.NumberFormat('es-CO').format(service.cost)}`, 20, yPosition);
+                yPosition += 15;
+                
+                // Línea separadora
+                if (index < services.length - 1) {
+                    pdf.line(20, yPosition, pageWidth - 20, yPosition);
+                    yPosition += 10;
+                }
+            });
+            
+            pdf.save("carta-de-servicios.pdf");
+        } catch (error) {
+            console.error('Error generando PDF alternativo:', error);
+            alert('Error al generar el PDF.');
+        }
+        
+        setIsGeneratingPdf(false);
+    };
+
     const generatePdf = async () => {
         setIsGeneratingPdf(true);
-        // Timeout to allow state to update and render the PDF content
-        setTimeout(async () => {
-            const pdfElement = pdfRef.current;
-            if (pdfElement) {
-                const canvas = await html2canvas(pdfElement, { scale: 2, useCORS: true });
-                const imgData = canvas.toDataURL('image/png');
-                const { jsPDF } = jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
-                const imgWidth = canvas.width;
-                const imgHeight = canvas.height;
-                const ratio = imgWidth / imgHeight;
-                let newImgWidth = pdfWidth;
-                let newImgHeight = newImgWidth / ratio;
+        
+        try {
+            setTimeout(async () => {
+                const pdfElement = pdfRef.current;
+                if (pdfElement) {
+                    try {
+                        // Crear un stylesheet temporal para sobrescribir colores problemáticos
+                        const tempStyle = document.createElement('style');
+                        tempStyle.id = 'temp-pdf-styles';
+                        tempStyle.innerHTML = `
+                            * {
+                                background-color: white !important;
+                                color: black !important;
+                                border-color: black !important;
+                                box-shadow: none !important;
+                            }
+                            .bg-emerald-600, .bg-emerald-500 {
+                                background-color: #059669 !important;
+                            }
+                            .bg-blue-600, .bg-blue-500 {
+                                background-color: #2563eb !important;
+                            }
+                            .bg-red-600, .bg-red-500 {
+                                background-color: #dc2626 !important;
+                            }
+                            .text-white {
+                                color: white !important;
+                            }
+                            .text-emerald-600 {
+                                color: #059669 !important;
+                            }
+                            .text-blue-600 {
+                                color: #2563eb !important;
+                            }
+                            .text-red-600 {
+                                color: #dc2626 !important;
+                            }
+                        `;
+                        document.head.appendChild(tempStyle);
+                        
+                        // Esperar un poco para que los estilos se apliquen
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                        
+                        const canvas = await html2canvas(pdfElement, { 
+                            scale: 2, 
+                            useCORS: true,
+                            allowTaint: true,
+                            backgroundColor: '#ffffff',
+                            removeContainer: true,
+                            logging: false,
+                            onclone: (clonedDoc) => {
+                                // Aplicar estilos seguros al documento clonado
+                                const clonedStyle = clonedDoc.createElement('style');
+                                clonedStyle.innerHTML = tempStyle.innerHTML;
+                                clonedDoc.head.appendChild(clonedStyle);
+                            }
+                        });
+                        
+                        // Remover el estilo temporal
+                        document.head.removeChild(tempStyle);
+                        
+                        const imgData = canvas.toDataURL('image/png');
+                        const pdf = new jsPDF('p', 'mm', 'a4');
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = pdf.internal.pageSize.getHeight();
+                        const imgWidth = canvas.width;
+                        const imgHeight = canvas.height;
+                        const ratio = imgWidth / imgHeight;
+                        let newImgWidth = pdfWidth;
+                        let newImgHeight = newImgWidth / ratio;
 
-                // if image height is bigger than page height, scale image to fit page height
-                if (newImgHeight > pdfHeight) {
-                    newImgHeight = pdfHeight;
-                    newImgWidth = newImgHeight * ratio;
+                        // if image height is bigger than page height, scale image to fit page height
+                        if (newImgHeight > pdfHeight) {
+                            newImgHeight = pdfHeight;
+                            newImgWidth = newImgHeight * ratio;
+                        }
+
+                        pdf.addImage(imgData, 'PNG', 0, 0, newImgWidth, newImgHeight);
+                        pdf.save("carta-de-servicios.pdf");
+                        
+                    } catch (error) {
+                        console.error('Error generando PDF:', error);
+                        
+                        // Remover el estilo temporal si existe
+                        const tempStyle = document.getElementById('temp-pdf-styles');
+                        if (tempStyle) {
+                            document.head.removeChild(tempStyle);
+                        }
+                        
+                        alert('Error al generar el PDF. Los colores modernos no son compatibles con la generación de PDF.');
+                    }
                 }
-
-                pdf.addImage(imgData, 'PNG', 0, 0, newImgWidth, newImgHeight);
-                pdf.save("carta-de-servicios.pdf");
-            }
+                setIsGeneratingPdf(false);
+            }, 100);
+        } catch (error) {
+            console.error('Error en generatePdf:', error);
             setIsGeneratingPdf(false);
-        }, 500); // Increased timeout to allow images to load for PDF
+        }
     };
 
     return (
@@ -217,13 +341,25 @@ const Services: React.FC = () => {
             </Header>
             
             <div className="mb-6">
-                <button
-                    onClick={generatePdf}
-                    disabled={isGeneratingPdf}
-                    className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center disabled:bg-blue-300"
-                >
-                    {isGeneratingPdf ? 'Generando...' : 'Generar Carta de Servicios (PDF)'}
-                </button>
+                <div className="flex gap-2 flex-wrap">
+                    <button
+                        onClick={generatePdf}
+                        disabled={isGeneratingPdf}
+                        className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition flex items-center justify-center disabled:bg-blue-300"
+                    >
+                        {isGeneratingPdf ? 'Generando...' : 'Generar PDF (Visual)'}
+                    </button>
+                    <button
+                        onClick={generatePdfAlternative}
+                        disabled={isGeneratingPdf}
+                        className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center justify-center disabled:bg-green-300"
+                    >
+                        {isGeneratingPdf ? 'Generando...' : 'Generar PDF (Texto)'}
+                    </button>
+                </div>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+                    Si el PDF visual falla, usa la versión de texto como alternativa.
+                </p>
             </div>
             
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Nuevo Servicio">
