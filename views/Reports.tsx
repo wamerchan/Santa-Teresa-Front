@@ -101,6 +101,14 @@ const Reports: React.FC = () => {
     // Función para generar PDF con PDFMake
     const handleGeneratePDF = async () => {
         try {
+            console.log('🔄 Iniciando generación de PDF...');
+            
+            // Validar que hay datos
+            if (!monthlyData || monthlyData.length === 0) {
+                setError('No hay datos suficientes para generar el reporte. Agrega algunas reservas y gastos primero.');
+                return;
+            }
+
             // Convertir monthlyData al formato requerido por PDFMake
             const reportData: MonthlyReportData[] = monthlyData.map(month => ({
                 name: month.name,
@@ -108,6 +116,8 @@ const Reports: React.FC = () => {
                 expenses: month.Gastos,
                 profit: month.Ganancia
             }));
+
+            console.log('📊 Datos procesados:', reportData.length, 'meses');
 
             // Generar el PDF
             const pdfDoc = await generateFinancialReport(
@@ -117,11 +127,28 @@ const Reports: React.FC = () => {
                 aiSummary || undefined
             );
 
+            console.log('✅ PDF generado exitosamente');
+
             // Descargar el PDF
             pdfDoc.download(`reporte-financiero-santa-teresa-${new Date().toISOString().split('T')[0]}.pdf`);
+            
+            // Limpiar errores previos
+            setError('');
+            
         } catch (error) {
-            console.error('Error al generar PDF:', error);
-            setError('Error al generar el PDF. Inténtalo de nuevo.');
+            console.error('❌ Error al generar PDF:', error);
+            
+            if (error instanceof Error) {
+                if (error.message.includes('PDFMake')) {
+                    setError('Error de configuración de PDFMake. Recarga la página e inténtalo de nuevo.');
+                } else if (error.message.includes('import')) {
+                    setError('Error al cargar las librerías de PDF. Verifica tu conexión e inténtalo de nuevo.');
+                } else {
+                    setError(`Error específico: ${error.message}`);
+                }
+            } else {
+                setError('Error desconocido al generar el PDF. Inténtalo de nuevo.');
+            }
         }
     };
 
@@ -234,19 +261,6 @@ const Reports: React.FC = () => {
                         </p>
                     </div>
                 )}
-            </div>
-
-            <div className="mt-8">
-                <button
-                    onClick={handleGeneratePDF}
-                    disabled={monthlyData.length === 0}
-                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition disabled:bg-green-300 disabled:cursor-not-allowed flex items-center"
-                >
-                    <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v8m4-4H8m8 8H8m8-8h4a2 2 0 002-2v-4a2 2 0 00-2-2h-4m-8 0H4a2 2 0 00-2 2v4a2 2 0 002 2h4" />
-                    </svg>
-                    Generar PDF del Reporte
-                </button>
             </div>
         </div>
     );

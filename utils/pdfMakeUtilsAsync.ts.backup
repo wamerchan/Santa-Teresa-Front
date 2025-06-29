@@ -7,7 +7,21 @@ const pdfMakeMain = (pdfMake as any).default || pdfMake;
 const pdfMakeInstance = pdfMakeMain;
 pdfMakeInstance.vfs = (pdfFonts as any).default || pdfFonts;
 
-// Tipos para los datos de reportes
+// Verificar que PDFMake esté correctamente configurado
+const initializePdfMake = () => {
+    try {
+        if (!pdfMakeInstance) {
+            throw new Error('PDFMake no está disponible');
+        }
+        if (!pdfMakeInstance.vfs) {
+            throw new Error('Las fuentes de PDFMake no están configuradas');
+        }
+        return true;
+    } catch (error) {
+        console.error('Error al inicializar PDFMake:', error);
+        return false;
+    }
+};
 export interface MonthlyReportData {
     name: string;
     income: number;
@@ -44,22 +58,6 @@ export interface ServiceData {
     imageUrl?: string;
 }
 
-// Verificar que PDFMake esté correctamente configurado
-const initializePdfMake = () => {
-    try {
-        if (!pdfMakeInstance) {
-            throw new Error('PDFMake no está disponible');
-        }
-        if (!pdfMakeInstance.vfs) {
-            throw new Error('Las fuentes de PDFMake no están configuradas');
-        }
-        return true;
-    } catch (error) {
-        console.error('Error al inicializar PDFMake:', error);
-        return false;
-    }
-};
-
 // Función para generar reporte financiero
 export const generateFinancialReport = async (
     monthlyData: MonthlyReportData[],
@@ -71,6 +69,10 @@ export const generateFinancialReport = async (
         // Verificar que PDFMake esté correctamente inicializado
         if (!initializePdfMake()) {
             throw new Error('PDFMake no está correctamente configurado');
+        }
+        const isPdfMakeReady = initializePdfMake();
+        if (!isPdfMakeReady) {
+            throw new Error('PDFMake no está listo para generar el reporte');
         }
 
         const totalIncome = monthlyData.reduce((sum, month) => sum + month.income, 0);
@@ -326,7 +328,7 @@ export const generateFinancialReport = async (
             }
         };
 
-        return pdfMakeInstance.createPdf(docDefinition as any);
+        return pdfMakeInstance.createPdf(docDefinition);
     } catch (error) {
         console.error('Error al generar PDF:', error);
         throw new Error('No se pudo generar el PDF. Verifica que PDFMake esté instalado correctamente.');
@@ -340,7 +342,6 @@ export const generateServicesReport = async (services: ServiceData[]) => {
         if (!initializePdfMake()) {
             throw new Error('PDFMake no está correctamente configurado');
         }
-
         const docDefinition = {
             content: [
                 // Encabezado
@@ -417,7 +418,7 @@ export const generateServicesReport = async (services: ServiceData[]) => {
             pageMargins: [40, 60, 40, 60]
         };
 
-        return pdfMakeInstance.createPdf(docDefinition as any);
+        return pdfMakeInstance.createPdf(docDefinition);
     } catch (error) {
         console.error('Error al generar catálogo PDF:', error);
         throw new Error('No se pudo generar el catálogo PDF. Verifica que PDFMake esté instalado correctamente.');
