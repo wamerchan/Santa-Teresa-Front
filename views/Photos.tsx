@@ -1,21 +1,75 @@
-
 import React, { useState, useContext, useRef } from 'react';
 import { AppContext } from '../contexts/AppContext';
 import { Photo, AppContextType } from '../types';
 import Header from '../components/Header';
 import Modal from '../components/Modal';
 
-const PhotoCard: React.FC<{ photo: Photo; onDelete: (id: string) => void; onCompare: (photo: Photo) => void; apiUrl: string }> = ({ photo, onDelete, onCompare, apiUrl }) => {
+const PhotoCard: React.FC<{ photo: Photo; onDelete: (id: string) => void; onCompare: (photo: Photo) => void; onEdit: (id: string, newDescription: string) => void; apiUrl: string }> = ({ photo, onDelete, onCompare, onEdit, apiUrl }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editDescription, setEditDescription] = useState(photo.description);
+
+    const handleSaveEdit = () => {
+        onEdit(photo.id, editDescription);
+        setIsEditing(false);
+    };
+
+    const handleCancelEdit = () => {
+        setEditDescription(photo.description);
+        setIsEditing(false);
+    };
+
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden group">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden group flex flex-col">
             <img src={`${apiUrl}${photo.url}`} alt={photo.description} className="w-full h-48 object-cover" />
-            <div className="p-4">
-                <p className="text-sm text-gray-600 dark:text-gray-300 truncate">{photo.description}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{new Date(photo.uploadDate).toLocaleDateString()}</p>
-                <div className="flex justify-between items-center mt-3">
-                    <button onClick={() => onCompare(photo)} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Comparar</button>
-                    <button onClick={() => onDelete(photo.id)} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
-                </div>
+            <div className="p-4 flex-1 flex flex-col">
+                {isEditing ? (
+                    <div className="flex-1 mb-2">
+                        <textarea
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            className="w-full p-2 text-sm border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 resize-none"
+                            rows={3}
+                            placeholder="Descripción de la foto..."
+                        />
+                        <div className="flex gap-2 mt-2">
+                            <button 
+                                onClick={handleSaveEdit}
+                                className="text-xs px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600"
+                            >
+                                Guardar
+                            </button>
+                            <button 
+                                onClick={handleCancelEdit}
+                                className="text-xs px-2 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-2 leading-relaxed flex-1">
+                        {photo.description}
+                    </p>
+                )}
+                
+                <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                    {new Date(photo.uploadDate).toLocaleDateString()}
+                </p>
+                
+                {!isEditing && (
+                    <div className="flex justify-between items-center gap-2">
+                        <div className="flex gap-2">
+                            <button onClick={() => onCompare(photo)} className="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">Comparar</button>
+                            <button 
+                                onClick={() => setIsEditing(true)}
+                                className="text-xs px-2 py-1 bg-emerald-500 text-white rounded hover:bg-emerald-600"
+                            >
+                                Editar
+                            </button>
+                        </div>
+                        <button onClick={() => onDelete(photo.id)} className="text-xs text-red-500 hover:text-red-700">Eliminar</button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -123,6 +177,24 @@ const Photos: React.FC = () => {
         }
     };
 
+    const handleEdit = async (id: string, newDescription: string) => {
+        try {
+            const response = await fetch(`${apiUrl}/api/photos/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ description: newDescription }),
+            });
+            if (!response.ok) throw new Error('Error al actualizar la descripción.');
+            const updatedPhoto = await response.json();
+            setPhotos(prev => prev.map(p => p.id === id ? updatedPhoto : p));
+        } catch (error) {
+            console.error(error);
+            alert(error instanceof Error ? error.message : 'Error al actualizar la descripción');
+        }
+    };
+
     const handleCompare = (photo: Photo) => {
         if (!comparePhotos[0]) {
             setComparePhotos([photo, null]);
@@ -172,7 +244,7 @@ const Photos: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 {photos.length > 0 ? (
-                    photos.map(photo => <PhotoCard key={photo.id} photo={photo} onDelete={handleDelete} onCompare={handleCompare} apiUrl={apiUrl} />)
+                    photos.map(photo => <PhotoCard key={photo.id} photo={photo} onDelete={handleDelete} onCompare={handleCompare} onEdit={handleEdit} apiUrl={apiUrl} />)
                 ) : (
                     <p className="col-span-full text-center text-gray-500 dark:text-gray-400">No hay fotos subidas.</p>
                 )}
