@@ -1,7 +1,7 @@
 
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../contexts/AppContext';
-import { AppView } from '../types';
+import { AppView, ReservationSource } from '../types';
 import { 
     Calendar, 
     TrendingUp, 
@@ -99,6 +99,134 @@ const MonthlyIncomeCard: React.FC<{
     );
 };
 
+const MonthlyNightsCard: React.FC<{ 
+    reservations: any[], 
+    iconClass: string 
+}> = ({ reservations, iconClass }) => {
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+    
+    const monthlyNights = reservations
+        .filter(r => {
+            const checkInDate = new Date(r.checkIn);
+            return checkInDate.getMonth() === selectedMonth && checkInDate.getFullYear() === selectedYear;
+        })
+        .reduce((acc, r) => {
+            const checkIn = new Date(r.checkIn);
+            const checkOut = new Date(r.checkOut);
+            const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+            return acc + nights;
+        }, 0);
+
+    const months = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    const years = Array.from(new Set([
+        ...reservations.map(r => new Date(r.checkIn).getFullYear()),
+        new Date().getFullYear()
+    ])).sort((a, b) => b - a);
+
+    return (
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-purple-500">
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center">
+                    <div className="mr-4 text-gray-500 dark:text-gray-400">
+                        <Calendar className={iconClass} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Noches Reservadas (Mes)</p>
+                        <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{monthlyNights}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="flex space-x-2">
+                <select 
+                    value={selectedMonth} 
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                >
+                    {months.map((month, index) => (
+                        <option key={index} value={index}>{month}</option>
+                    ))}
+                </select>
+                <select 
+                    value={selectedYear} 
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                >
+                    {years.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+    );
+};
+
+const MonthlyExpensesCard: React.FC<{ 
+    expenses: any[], 
+    formatCurrency: (amount: number) => string,
+    iconClass: string 
+}> = ({ expenses, formatCurrency, iconClass }) => {
+    const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+    const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+        
+    const monthlyExpenses = expenses
+        .filter(e => {
+            const expenseDate = new Date(e.date);
+            return expenseDate.getMonth() === selectedMonth && expenseDate.getFullYear() === selectedYear;
+        })
+        .reduce((acc, e) => acc + e.amount, 0);
+
+    const months = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    const years = Array.from(new Set([
+        ...expenses.map(e => new Date(e.date).getFullYear()),
+        new Date().getFullYear()
+    ])).sort((a, b) => b - a);
+
+    return (
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border-l-4 border-red-500">
+            <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center">
+                    <div className="mr-4 text-gray-500 dark:text-gray-400">
+                        <TrendingDown className={iconClass} />
+                    </div>
+                    <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Gastos (Mes)</p>
+                        <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{formatCurrency(monthlyExpenses)}</p>
+                    </div>
+                </div>
+            </div>
+            <div className="flex space-x-2">
+                <select 
+                    value={selectedMonth} 
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                    {months.map((month, index) => (
+                        <option key={index} value={index}>{month}</option>
+                    ))}
+                </select>
+                <select 
+                    value={selectedYear} 
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="text-xs px-2 py-1 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                >
+                    {years.map(year => (
+                        <option key={year} value={year}>{year}</option>
+                    ))}
+                </select>
+            </div>
+        </div>
+    );
+};
+
 const NavCard: React.FC<{ title: string; description: string; view: AppView; setView: (view: AppView) => void; icon: React.ReactNode }> = ({ title, description, view, setView, icon }) => (
     <div
         onClick={() => setView(view)}
@@ -118,14 +246,26 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     const { reservations, expenses } = context;
 
     const upcomingReservations = reservations.filter(r => new Date(r.checkIn) >= new Date()).length;
-    
-    const monthlyExpenses = expenses
-        .filter(e => new Date(e.date).getMonth() === new Date().getMonth())
-        .reduce((acc, e) => acc + e.amount, 0);
 
     // Calcular totales
     const totalIncome = reservations.reduce((acc, r) => acc + (r.totalPaid - r.commission - r.taxes), 0);
-    const totalExpenses = expenses.reduce((acc, e) => acc + e.amount, 0);
+
+    // Calcular total de noches reservadas hasta la fecha actual
+    const totalNightsReserved = reservations.reduce((acc, r) => {
+        const checkIn = new Date(r.checkIn);
+        const checkOut = new Date(r.checkOut);
+        const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24));
+        return acc + nights;
+    }, 0);
+
+    // Calcular comisiones por plataforma
+    const bookingCommissions = reservations
+        .filter(r => r.source === ReservationSource.Booking)
+        .reduce((acc, r) => acc + (Number(r.commission) || 0), 0);
+
+    const airbnbCommissions = reservations
+        .filter(r => r.source === ReservationSource.Airbnb)
+        .reduce((acc, r) => acc + (Number(r.commission) || 0), 0);
 
     const formatCurrency = (amount: number) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(amount);
 
@@ -137,17 +277,57 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <h2 className="text-4xl font-extrabold text-gray-800 dark:text-gray-100 mb-2">Bienvenido de Nuevo!</h2>
             <p className="text-lg text-gray-500 dark:text-gray-400 mb-8">Aquí tienes un resumen rápido del estado de Santa Teresa.</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                <InfoCard title="Próximas Reservas" value={upcomingReservations} color="border-blue-500" icon={<Calendar className={iconClass} />} />
+            {/* Grid principal de estadísticas */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <InfoCard 
+                    title="Próximas Reservas" 
+                    value={upcomingReservations} 
+                    color="border-blue-500" 
+                    icon={<Calendar className={iconClass} />} 
+                />
                 <MonthlyIncomeCard 
                     reservations={reservations} 
                     expenses={expenses} 
                     formatCurrency={formatCurrency}
                     iconClass={iconClass}
                 />
-                <InfoCard title="Gastos (Mes)" value={formatCurrency(monthlyExpenses)} color="border-red-500" icon={<TrendingDown className={iconClass} />} />
-                <InfoCard title="Ganancia Total" value={formatCurrency(totalIncome)} color="border-green-600" icon={<DollarSign className={iconClass} />} />
-                <InfoCard title="Gastos Totales" value={formatCurrency(totalExpenses)} color="border-orange-500" icon={<Receipt className={iconClass} />} />
+                <MonthlyNightsCard 
+                    reservations={reservations} 
+                    iconClass={iconClass}
+                />
+                <MonthlyExpensesCard 
+                    expenses={expenses} 
+                    formatCurrency={formatCurrency}
+                    iconClass={iconClass}
+                />
+            </div>
+
+            {/* Grid secundario de totales y comisiones */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <InfoCard 
+                    title="Total Noches Reservadas" 
+                    value={totalNightsReserved} 
+                    color="border-indigo-500" 
+                    icon={<Calendar className={iconClass} />} 
+                />
+                <InfoCard 
+                    title="Comisiones Booking" 
+                    value={formatCurrency(bookingCommissions)} 
+                    color="border-blue-600" 
+                    icon={<DollarSign className={iconClass} />} 
+                />
+                <InfoCard 
+                    title="Comisiones Airbnb" 
+                    value={formatCurrency(airbnbCommissions)} 
+                    color="border-pink-500" 
+                    icon={<DollarSign className={iconClass} />} 
+                />
+                <InfoCard 
+                    title="Ganancia Total" 
+                    value={formatCurrency(totalIncome)} 
+                    color="border-green-600" 
+                    icon={<TrendingUp className={iconClass} />} 
+                />
             </div>
 
             <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Accesos Rápidos</h3>
