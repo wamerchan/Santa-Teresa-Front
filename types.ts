@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 export type AppView = 'dashboard' | 'reservations' | 'expenses' | 'photos' | 'services' | 'reports';
@@ -7,6 +6,14 @@ export enum ReservationSource {
     Airbnb = 'Airbnb',
     Booking = 'Booking.com',
     Direct = 'Directo'
+}
+
+export enum PaymentMethod {
+    Cash = 'Efectivo',
+    Nequi = 'Nequi',
+    Daviplata = 'Daviplata',
+    Paypal = 'Paypal',
+    Other = 'Otro'
 }
 
 export interface Reservation {
@@ -18,6 +25,9 @@ export interface Reservation {
     totalPaid: number;
     commission: number;
     taxes: number;
+    paymentMethod?: PaymentMethod;
+    guestCount?: number;
+    guestPhone?: string;
 }
 
 export interface Expense {
