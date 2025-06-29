@@ -2,14 +2,18 @@ import React, { useContext, useMemo, useState } from 'react';
 import { AppContext } from '../contexts/AppContext';
 import { AppContextType } from '../types';
 import { generateFinancialReport, MonthlyReportData } from '../utils/pdfMakeUtilsAsync';
-
-// Recharts is loaded from a script tag, so we need to access it from the window object.
-// We declare it on the window object to satisfy TypeScript.
-declare global {
-    interface Window {
-        Recharts: any;
-    }
-}
+import { 
+    BarChart, 
+    Bar, 
+    XAxis, 
+    YAxis, 
+    CartesianGrid, 
+    Tooltip, 
+    Legend, 
+    ResponsiveContainer, 
+    LineChart, 
+    Line 
+} from 'recharts';
 
 const Reports: React.FC = () => {
     const context = useContext(AppContext);
@@ -17,57 +21,50 @@ const Reports: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState('');
 
-    // Recharts is loaded via a script tag, so it might not be available on initial render.
-    // We check for its existence before trying to use it.
-    if (!window.Recharts) {
-        return (
-            <div>
-                <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-6">Reportes Financieros</h2>
-                <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md text-center">
-                    <p className="text-gray-500">Cargando gráficos...</p>
-                </div>
-            </div>
-        );
-    }
-
-    const { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } = window.Recharts;
-    
     if (!context) return null;
     const { reservations, expenses, apiUrl } = context as AppContextType;
 
+    // Calcular datos mensuales con useMemo ANTES de cualquier return condicional
     const monthlyData = useMemo(() => {
-        const data: { [key: string]: { income: number, expenses: number } } = {};
+        // Agrupar datos por mes
+        const monthlyStats = new Map<string, { income: number; expenses: number }>();
 
-        reservations.forEach(r => {
-            const month = new Date(r.checkIn).toLocaleString('es-ES', { month: 'short', year: '2-digit' });
-            if (!data[month]) data[month] = { income: 0, expenses: 0 };
-            data[month].income += r.totalPaid - r.commission - r.taxes;
+        // Procesar reservas
+        reservations.forEach(reservation => {
+            const monthKey = reservation.checkIn.substring(0, 7); // YYYY-MM
+            const totalPaid = Number(reservation.totalPaid) || 0;
+            const commission = Number(reservation.commission) || 0;
+            const taxes = Number(reservation.taxes) || 0;
+            const netProfit = totalPaid - commission - taxes;
+
+            if (!monthlyStats.has(monthKey)) {
+                monthlyStats.set(monthKey, { income: 0, expenses: 0 });
+            }
+            const stats = monthlyStats.get(monthKey)!;
+            stats.income += netProfit;
         });
 
-        expenses.forEach(e => {
-            const month = new Date(e.date).toLocaleString('es-ES', { month: 'short', year: '2-digit' });
-            if (!data[month]) data[month] = { income: 0, expenses: 0 };
-            data[month].expenses += e.amount;
-        });
-        
-        const sortedEntries = Object.entries(data).sort((a,b) => {
-            const [aMonthStr, aYear] = a[0].split('. ');
-            const [bMonthStr, bYear] = b[0].split('. ');
-             const monthMap: {[key: string]: number} = { 'ene': 0, 'feb': 1, 'mar': 2, 'abr': 3, 'may': 4, 'jun': 5, 'jul': 6, 'ago': 7, 'sept': 8, 'oct': 9, 'nov': 10, 'dic': 11 };
-            const aDate = new Date(parseInt(`20${aYear}`), monthMap[aMonthStr.toLowerCase()]);
-            const bDate = new Date(parseInt(`20${bYear}`), monthMap[bMonthStr.toLowerCase()]);
-            return aDate.getTime() - bDate.getTime();
+        // Procesar gastos
+        expenses.forEach(expense => {
+            const monthKey = expense.date.substring(0, 7); // YYYY-MM
+            if (!monthlyStats.has(monthKey)) {
+                monthlyStats.set(monthKey, { income: 0, expenses: 0 });
+            }
+            const stats = monthlyStats.get(monthKey)!;
+            stats.expenses += Number(expense.amount) || 0;
         });
 
-        return sortedEntries.map(([name, values]) => ({
-            name,
-            Ingresos: values.income,
-            Gastos: values.expenses,
-            Ganancia: values.income - values.expenses,
-        }));
-
+        // Convertir a array y ordenar
+        return Array.from(monthlyStats.entries())
+            .sort(([a], [b]) => a.localeCompare(b))
+            .map(([month, values]) => ({
+                name: new Date(month + '-01').toLocaleDateString('es-ES', { year: 'numeric', month: 'long' }),
+                Ingresos: values.income,
+                Gastos: values.expenses,
+                Ganancia: values.income - values.expenses,
+            }));
     }, [reservations, expenses]);
-    
+
     const handleGenerateSummary = async () => {
         if (!monthlyData || monthlyData.length === 0) {
             setError("No hay datos suficientes para generar un resumen.");
