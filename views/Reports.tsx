@@ -1,7 +1,7 @@
-
 import React, { useContext, useMemo, useState } from 'react';
 import { AppContext } from '../contexts/AppContext';
 import { AppContextType } from '../types';
+import { generateFinancialReport, MonthlyReportData } from '../utils/pdfMakeUtilsAsync';
 
 // Recharts is loaded from a script tag, so we need to access it from the window object.
 // We declare it on the window object to satisfy TypeScript.
@@ -101,6 +101,32 @@ const Reports: React.FC = () => {
         }
     };
 
+    // Función para generar PDF con PDFMake
+    const handleGeneratePDF = async () => {
+        try {
+            // Convertir monthlyData al formato requerido por PDFMake
+            const reportData: MonthlyReportData[] = monthlyData.map(month => ({
+                name: month.name,
+                income: month.Ingresos,
+                expenses: month.Gastos,
+                profit: month.Ganancia
+            }));
+
+            // Generar el PDF
+            const pdfDoc = await generateFinancialReport(
+                reportData,
+                reservations,
+                expenses,
+                aiSummary || undefined
+            );
+
+            // Descargar el PDF
+            pdfDoc.download(`reporte-financiero-santa-teresa-${new Date().toISOString().split('T')[0]}.pdf`);
+        } catch (error) {
+            console.error('Error al generar PDF:', error);
+            setError('Error al generar el PDF. Inténtalo de nuevo.');
+        }
+    };
 
     const formatCurrencyTick = (tick: number) => new Intl.NumberFormat('es-CO', { notation: 'compact', compactDisplay: 'short' }).format(tick);
     
@@ -171,19 +197,32 @@ const Reports: React.FC = () => {
                 <p className="text-gray-600 dark:text-gray-300 mb-4">
                     Obtén un resumen automático de tus finanzas utilizando inteligencia artificial.
                 </p>
-                <button
-                    onClick={handleGenerateSummary}
-                    disabled={isGenerating || monthlyData.length === 0}
-                    className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition disabled:bg-indigo-300 disabled:cursor-not-allowed flex items-center"
-                >
-                    {isGenerating && (
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                <div className="flex gap-4 flex-wrap">
+                    <button
+                        onClick={handleGenerateSummary}
+                        disabled={isGenerating || monthlyData.length === 0}
+                        className="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition disabled:bg-indigo-300 disabled:cursor-not-allowed flex items-center"
+                    >
+                        {isGenerating && (
+                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        )}
+                        {isGenerating ? 'Generando...' : 'Generar Resumen Financiero'}
+                    </button>
+                    
+                    <button
+                        onClick={handleGeneratePDF}
+                        disabled={monthlyData.length === 0}
+                        className="px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition disabled:bg-emerald-300 disabled:cursor-not-allowed flex items-center"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                    )}
-                    {isGenerating ? 'Generando...' : 'Generar Resumen Financiero'}
-                </button>
+                        Descargar PDF
+                    </button>
+                </div>
                 
                 {error && (
                     <div className="mt-4 p-3 bg-red-100 dark:bg-red-900 border-l-4 border-red-500 text-red-700 dark:text-red-200 rounded-md">
@@ -198,6 +237,19 @@ const Reports: React.FC = () => {
                         </p>
                     </div>
                 )}
+            </div>
+
+            <div className="mt-8">
+                <button
+                    onClick={handleGeneratePDF}
+                    disabled={monthlyData.length === 0}
+                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition disabled:bg-green-300 disabled:cursor-not-allowed flex items-center"
+                >
+                    <svg className="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v8m4-4H8m8 8H8m8-8h4a2 2 0 002-2v-4a2 2 0 00-2-2h-4m-8 0H4a2 2 0 00-2 2v4a2 2 0 002 2h4" />
+                    </svg>
+                    Generar PDF del Reporte
+                </button>
             </div>
         </div>
     );

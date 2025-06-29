@@ -2,6 +2,17 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../contexts/AppContext';
 import { AppView } from '../types';
+import { 
+    Calendar, 
+    TrendingUp, 
+    TrendingDown, 
+    DollarSign, 
+    Receipt,
+    Users,
+    PieChart,
+    Camera,
+    Settings
+} from 'lucide-react';
 
 interface DashboardProps {
     setView: (view: AppView) => void;
@@ -56,9 +67,7 @@ const MonthlyIncomeCard: React.FC<{
             <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center">
                     <div className="mr-4 text-gray-500 dark:text-gray-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
+                        <TrendingUp className={iconClass} />
                     </div>
                     <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Ganancia Neta (Mes)</p>
@@ -129,25 +138,25 @@ const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             <p className="text-lg text-gray-500 dark:text-gray-400 mb-8">Aquí tienes un resumen rápido del estado de Santa Teresa.</p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-                <InfoCard title="Próximas Reservas" value={upcomingReservations} color="border-blue-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
+                <InfoCard title="Próximas Reservas" value={upcomingReservations} color="border-blue-500" icon={<Calendar className={iconClass} />} />
                 <MonthlyIncomeCard 
                     reservations={reservations} 
                     expenses={expenses} 
                     formatCurrency={formatCurrency}
                     iconClass={iconClass}
                 />
-                <InfoCard title="Gastos (Mes)" value={formatCurrency(monthlyExpenses)} color="border-red-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" /></svg>} />
-                <InfoCard title="Ganancia Total" value={formatCurrency(totalIncome)} color="border-green-600" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8a3 3 0 11-6 0c0-.176.016-.35.045-.522M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>} />
-                <InfoCard title="Gastos Totales" value={formatCurrency(totalExpenses)} color="border-orange-500" icon={<svg xmlns="http://www.w3.org/2000/svg" className={iconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} />
+                <InfoCard title="Gastos (Mes)" value={formatCurrency(monthlyExpenses)} color="border-red-500" icon={<TrendingDown className={iconClass} />} />
+                <InfoCard title="Ganancia Total" value={formatCurrency(totalIncome)} color="border-green-600" icon={<DollarSign className={iconClass} />} />
+                <InfoCard title="Gastos Totales" value={formatCurrency(totalExpenses)} color="border-orange-500" icon={<Receipt className={iconClass} />} />
             </div>
 
             <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-6">Accesos Rápidos</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <NavCard title="Gestionar Reservas" description="Ver calendario y detalles de huéspedes." view="reservations" setView={setView} icon={<svg xmlns="http://www.w3.org/2000/svg" className={navIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
-                <NavCard title="Registrar Gastos" description="Añadir costos de mantenimiento y compras." view="expenses" setView={setView} icon={<svg xmlns="http://www.w3.org/2000/svg" className={navIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" /></svg>} />
-                <NavCard title="Ver Reportes" description="Analizar finanzas con gráficos detallados." view="reports" setView={setView} icon={<svg xmlns="http://www.w3.org/2000/svg" className={navIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>} />
-                <NavCard title="Álbum de Fotos" description="Subir y comparar imágenes de Santa Teresa." view="photos" setView={setView} icon={<svg xmlns="http://www.w3.org/2000/svg" className={navIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>} />
-                <NavCard title="Servicios Adicionales" description="Configurar y generar carta de servicios." view="services" setView={setView} icon={<svg xmlns="http://www.w3.org/2000/svg" className={navIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16v4m-2-2h4m2 10h-4m2 4v-4m6-2a2 2 0 100-4 2 2 0 000 4zm-2-7a2 2 0 100-4 2 2 0 000 4z" /></svg>} />
+                <NavCard title="Gestionar Reservas" description="Ver calendario y detalles de huéspedes." view="reservations" setView={setView} icon={<Users className={navIconClass} />} />
+                <NavCard title="Registrar Gastos" description="Añadir costos de mantenimiento y compras." view="expenses" setView={setView} icon={<Receipt className={navIconClass} />} />
+                <NavCard title="Ver Reportes" description="Analizar finanzas con gráficos detallados." view="reports" setView={setView} icon={<PieChart className={navIconClass} />} />
+                <NavCard title="Álbum de Fotos" description="Subir y comparar imágenes de Santa Teresa." view="photos" setView={setView} icon={<Camera className={navIconClass} />} />
+                <NavCard title="Servicios Adicionales" description="Configurar y generar carta de servicios." view="services" setView={setView} icon={<Settings className={navIconClass} />} />
             </div>
         </div>
     );
