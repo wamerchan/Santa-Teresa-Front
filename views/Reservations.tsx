@@ -437,6 +437,7 @@ const Reservations: React.FC = () => {
     const [viewingReservation, setViewingReservation] = useState<Reservation | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
     const [syncError, setSyncError] = useState('');
+    const [syncSuccess, setSyncSuccess] = useState('');
     const [filter, setFilter] = useState<'upcoming' | 'past' | 'all'>('upcoming');
     
     if (!context) return null;
@@ -445,7 +446,9 @@ const Reservations: React.FC = () => {
     const handleSyncCalendars = async () => {
         setIsSyncing(true);
         setSyncError('');
+        setSyncSuccess('');
         try {
+            console.log('🔄 Iniciando sincronización desde frontend...');
             const response = await fetch(`${apiUrl}/api/reservations/sync`, { method: 'POST' });
 
             if (!response.ok) {
@@ -454,10 +457,26 @@ const Reservations: React.FC = () => {
             }
     
             const updatedReservations = await response.json();
+            console.log(`✅ Sincronización exitosa: ${updatedReservations.length} reservas totales`);
+            
+            const bookingCount = updatedReservations.filter((r: Reservation) => r.source === ReservationSource.Booking).length;
+            const airbnbCount = updatedReservations.filter((r: Reservation) => r.source === ReservationSource.Airbnb).length;
+            const directCount = updatedReservations.filter((r: Reservation) => r.source === ReservationSource.Direct).length;
+            
+            console.log('📋 Reservas por plataforma:', {
+                booking: bookingCount,
+                airbnb: airbnbCount,
+                direct: directCount,
+            });
+            
+            setSyncSuccess(`Sincronización exitosa: ${bookingCount} de Booking.com, ${airbnbCount} de Airbnb, ${directCount} directas`);
             setReservations(updatedReservations);
+            
+            // Limpiar mensaje de éxito después de 5 segundos
+            setTimeout(() => setSyncSuccess(''), 5000);
     
         } catch (error) {
-            console.error("Error syncing calendars:", error);
+            console.error("❌ Error syncing calendars:", error);
             setSyncError(error instanceof Error ? error.message : "Ocurrió un error desconocido.");
         } finally {
             setIsSyncing(false);
@@ -587,6 +606,12 @@ const Reservations: React.FC = () => {
             {syncError && (
                 <div className="my-4 p-3 bg-red-100 dark:bg-red-900 border-l-4 border-red-500 text-red-700 dark:text-red-200 rounded-md" role="alert">
                     <p><strong>Error de Sincronización:</strong> {syncError}</p>
+                </div>
+            )}
+
+            {syncSuccess && (
+                <div className="my-4 p-3 bg-green-100 dark:bg-green-900 border-l-4 border-green-500 text-green-700 dark:text-green-200 rounded-md" role="alert">
+                    <p><strong>Sincronización Exitosa:</strong> {syncSuccess}</p>
                 </div>
             )}
 
