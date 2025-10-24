@@ -574,9 +574,11 @@ const Reservations: React.FC = () => {
 
     const handleEditFromDetail = (reservation: Reservation) => {
         setViewingReservation(null);
-        setEditingReservation(reservation);
-        setSelectedDateForNewReservation(null);
-        setIsFormModalOpen(true);
+        setTimeout(() => {
+            setEditingReservation(reservation);
+            setSelectedDateForNewReservation(null);
+            setIsFormModalOpen(true);
+        }, 0);
     };
 
     return (
@@ -647,14 +649,6 @@ const Reservations: React.FC = () => {
                     reservation={viewingReservation}
                     onClose={handleCloseDetailModal}
                     onEdit={handleEditFromDetail}
-                />
-            )}
-
-            {viewingReservation && (
-                <ReservationDetailModal 
-                    reservation={viewingReservation} 
-                    onClose={() => setViewingReservation(null)} 
-                    onEdit={handleStartEdit} 
                 />
             )}
 
