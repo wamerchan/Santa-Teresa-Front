@@ -44,3 +44,4 @@ serve -s .
 ```
 
 La aplicación frontend estará disponible generalmente en `http://localhost:3000`. ¡Abre esa URL en tu navegador!
+## Frontend Version 2.0
